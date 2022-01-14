@@ -25,12 +25,12 @@
 """
 import chardet
 
-with open('test_file.txt', encoding='utf-8') as f:
+with open('test_file.txt', encoding='utf-8') as f1:
     try:
-        file_content = f.read()
+        file_content = f1.read()
     except UnicodeError:
-        with open('test_file.txt', 'rb') as f:
-            file_content = f.read()
+        with open('test_file.txt', 'rb') as f2:
+            file_content = f2.read()
             encoding = chardet.detect(file_content)['encoding']
             file_content = file_content.decode(encoding=encoding)
 
