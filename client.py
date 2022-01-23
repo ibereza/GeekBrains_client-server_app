@@ -4,7 +4,7 @@ import re
 from socket import *
 from time import time
 
-DEFAULT_PORT = 7778
+DEFAULT_PORT = 7777
 MAX_MESSAGE_LEN = 1024
 ENCODING = 'utf-8'
 
