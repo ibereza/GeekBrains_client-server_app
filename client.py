@@ -30,7 +30,7 @@ def connect_socket(ip, port):
         print('Server connection error')
         print('Check if IP address and port are correct')
         exit(1)
-    return (socket_)
+    return socket_
 
 
 def send_message(socket_, message):
