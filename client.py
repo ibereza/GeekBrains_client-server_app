@@ -7,7 +7,7 @@ from variables import DEFAULT_PORT
 from utilities import send_message, get_message
 
 
-def get_cli_args():
+def get_client_cli_args():
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument("address", type=str, help='Server IP address')
     args_parser.add_argument("port", nargs='?', type=int, default=DEFAULT_PORT, help='Server port')
@@ -34,7 +34,7 @@ def connect_client_socket(ip, port):
 
 
 def main():
-    server_ip_address, server_port = get_cli_args()
+    server_ip_address, server_port = get_client_cli_args()
     client_socket = connect_client_socket(server_ip_address, server_port)
 
     client_message = {
