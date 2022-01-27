@@ -4,9 +4,7 @@ import re
 from socket import *
 from time import time
 
-DEFAULT_PORT = 7777
-MAX_MESSAGE_LEN = 1024
-ENCODING = 'utf-8'
+from variables import *
 
 
 def get_cli_args():
@@ -24,15 +22,31 @@ def get_cli_args():
     return args.address, args.port
 
 
-def main():
-    client_socket = socket(AF_INET, SOCK_STREAM)
-    server_ip_address, server_port = get_cli_args()
+def connect_socket(ip, port):
+    socket_ = socket(AF_INET, SOCK_STREAM)
     try:
-        client_socket.connect((server_ip_address, server_port))
+        socket_.connect((ip, port))
     except ConnectionError:
         print('Server connection error')
         print('Check if IP address and port are correct')
         exit(1)
+    return (socket_)
+
+
+def send_message(socket_, message):
+    data = json.dumps(message).encode(ENCODING)
+    socket_.send(data)
+
+
+def get_message(socket_):
+    data = socket_.recv(MAX_MESSAGE_LEN)
+    message = json.loads(data.decode(ENCODING))
+    return message
+
+
+def main():
+    server_ip_address, server_port = get_cli_args()
+    client_socket = connect_socket(server_ip_address, server_port)
 
     client_message = {
         "action": "presence",
@@ -43,12 +57,9 @@ def main():
             "status": "Yep, I am here!"
         }
     }
+    send_message(client_socket, client_message)
 
-    data = json.dumps(client_message).encode(ENCODING)
-    client_socket.send(data)
-
-    data = client_socket.recv(MAX_MESSAGE_LEN)
-    server_message = json.loads(data.decode(ENCODING))
+    server_message = get_message(client_socket)
 
     print(f'Server response code: {server_message["response"]}')
     print(f'Server message: {server_message["alert"]}')

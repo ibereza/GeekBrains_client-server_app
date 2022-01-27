@@ -4,9 +4,7 @@ import re
 from socket import *
 from time import time
 
-DEFAULT_PORT = 7777
-MAX_MESSAGE_LEN = 1024
-ENCODING = 'utf-8'
+from variables import *
 
 
 def get_cli_args():
@@ -25,8 +23,8 @@ def get_cli_args():
 
 
 def main():
-    server_socket = socket(AF_INET, SOCK_STREAM)
     ip_address, port = get_cli_args()
+    server_socket = socket(AF_INET, SOCK_STREAM)
     try:
         server_socket.bind((ip_address, port))
     except OSError:
