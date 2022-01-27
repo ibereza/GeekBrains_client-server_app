@@ -22,7 +22,7 @@ def get_cli_args():
     return args.address, args.port
 
 
-def connect_socket(ip, port):
+def connect_client_socket(ip, port):
     socket_ = socket(AF_INET, SOCK_STREAM)
     try:
         socket_.connect((ip, port))
@@ -46,7 +46,7 @@ def get_message(socket_):
 
 def main():
     server_ip_address, server_port = get_cli_args()
-    client_socket = connect_socket(server_ip_address, server_port)
+    client_socket = connect_client_socket(server_ip_address, server_port)
 
     client_message = {
         "action": "presence",

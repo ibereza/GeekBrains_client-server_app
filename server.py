@@ -22,23 +22,38 @@ def get_cli_args():
     return args.a, args.p
 
 
-def main():
-    ip_address, port = get_cli_args()
-    server_socket = socket(AF_INET, SOCK_STREAM)
+def connect_server_socket(ip, port):
+    socket_ = socket(AF_INET, SOCK_STREAM)
     try:
-        server_socket.bind((ip_address, port))
+        socket_.bind((ip, port))
     except OSError:
-        print(f'Address {ip_address} or port {port} already in use')
+        print(f'Address {ip} or port {port} already in use')
         exit(1)
-    server_socket.listen(5)
+    socket_.listen(5)
     print(f'Server started on port {port}')
+    return socket_
+
+
+def get_message(client):
+    data = client.recv(MAX_MESSAGE_LEN)
+    message = json.loads(data.decode(ENCODING))
+    return message
+
+
+def send_message(client, message):
+    data = json.dumps(message).encode(ENCODING)
+    client.send(data)
+
+
+def main():
+    ip, port = get_cli_args()
+    server_socket = connect_server_socket(ip, port)
 
     while True:
         client, address = server_socket.accept()
         print(f"Connection request received from {address}")
 
-        data = client.recv(MAX_MESSAGE_LEN)
-        client_message = json.loads(data.decode(ENCODING))
+        client_message = get_message(client)
         print(f'Message received: {client_message}')
 
         server_message = ''
@@ -48,9 +63,7 @@ def main():
                 "time": time(),
                 "alert": 'OK'
             }
-
-        data = json.dumps(server_message).encode(ENCODING)
-        client.send(data)
+        send_message(client, server_message)
 
         client.close()
 
