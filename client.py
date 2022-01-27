@@ -1,15 +1,15 @@
 import argparse
-import json
 import re
 from socket import *
 from time import time
 
-from variables import *
+from variables import DEFAULT_PORT
+from utilities import send_message, get_message
 
 
 def get_cli_args():
     args_parser = argparse.ArgumentParser()
-    args_parser.add_argument("address", type=str, help='Server address')
+    args_parser.add_argument("address", type=str, help='Server IP address')
     args_parser.add_argument("port", nargs='?', type=int, default=DEFAULT_PORT, help='Server port')
     args = args_parser.parse_args()
     ip_re_tpl = r'^((25[0-5]|2[4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[4]\d|[01]?\d\d?)$'
@@ -31,17 +31,6 @@ def connect_client_socket(ip, port):
         print('Check if IP address and port are correct')
         exit(1)
     return socket_
-
-
-def send_message(socket_, message):
-    data = json.dumps(message).encode(ENCODING)
-    socket_.send(data)
-
-
-def get_message(socket_):
-    data = socket_.recv(MAX_MESSAGE_LEN)
-    message = json.loads(data.decode(ENCODING))
-    return message
 
 
 def main():

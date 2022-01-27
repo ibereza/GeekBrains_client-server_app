@@ -1,10 +1,10 @@
 import argparse
-import json
 import re
 from socket import *
 from time import time
 
-from variables import *
+from variables import DEFAULT_PORT
+from utilities import send_message, get_message
 
 
 def get_cli_args():
@@ -32,17 +32,6 @@ def connect_server_socket(ip, port):
     socket_.listen(5)
     print(f'Server started on port {port}')
     return socket_
-
-
-def get_message(client):
-    data = client.recv(MAX_MESSAGE_LEN)
-    message = json.loads(data.decode(ENCODING))
-    return message
-
-
-def send_message(client, message):
-    data = json.dumps(message).encode(ENCODING)
-    client.send(data)
 
 
 def main():
