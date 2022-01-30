@@ -1,10 +1,14 @@
 import argparse
+import logging
 import re
 from socket import *
 from time import time
 
+import logs.logs_config.client_log_config
 from variables import DEFAULT_PORT
 from utilities import send_message, get_message
+
+client_log = logging.getLogger('client')
 
 
 def get_client_cli_args():
@@ -18,11 +22,14 @@ def get_client_cli_args():
     if re.match(ip_re_tpl, args.address) is None:
         print('Please enter a valid IP address')
         args_correct = False
+        client_log.error('Wrong IP address')
     if not 1024 <= args.port <= 65535:
         print('The port address must be in the range 1024-65535')
         args_correct = False
+        client_log.error('Wrong port address')
     if not args_correct:
         exit(1)
+    client_log.info(f'CLI arguments are correct. IP: {args.address}, Port: {args.port}')
     return args.address, args.port
 
 
@@ -33,7 +40,10 @@ def connect_client_socket(ip, port):
     except ConnectionError:
         print('Server connection error')
         print('Check if IP address and port are correct')
+        client_log.critical('Server connection error')
         exit(1)
+    else:
+        client_log.info('Successful connection to the server')
     return socket_
 
 
@@ -46,6 +56,7 @@ def create_message_presence(account_name='Guest'):
             "account_name": account_name
         }
     }
+    client_log.info('Presence message created')
     return message
 
 
@@ -55,12 +66,15 @@ def main():
 
     client_message = create_message_presence()
     send_message(client_socket, client_message)
+    client_log.info('Presence message sent')
 
     server_message = get_message(client_socket)
+    client_log.info('Message received from the server')
     print(f'Server response code: {server_message["response"]}')
     print(f'Server message: {server_message["alert"]}')
 
     client_socket.close()
+    client_log.info('Socket closed')
 
 
 if __name__ == '__main__':
