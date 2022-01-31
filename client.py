@@ -5,12 +5,14 @@ from socket import *
 from time import time
 
 import logs.logs_config.client_log_config
+from logs.logs_config.function_log import log
 from variables import DEFAULT_PORT
 from utilities import send_message, get_message
 
 client_log = logging.getLogger('client')
 
 
+@log
 def get_client_cli_args():
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument("address", type=str, help='Server IP address')
@@ -33,6 +35,7 @@ def get_client_cli_args():
     return args.address, args.port
 
 
+@log
 def connect_client_socket(ip, port):
     socket_ = socket(AF_INET, SOCK_STREAM)
     try:
@@ -47,6 +50,7 @@ def connect_client_socket(ip, port):
     return socket_
 
 
+@log
 def create_message_presence(account_name='Guest'):
     message = {
         "action": "presence",
