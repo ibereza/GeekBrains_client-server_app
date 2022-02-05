@@ -75,6 +75,29 @@ def create_client_message(message):
     return send_message
 
 
+@log
+def handle_clients(clients):
+    recv_socket_list = []
+    send_socket_list = []
+    err_list = []
+
+    try:
+        recv_socket_list, send_socket_list, err_list = select.select(clients, clients, [], 0)
+    except OSError:
+        pass
+
+    if recv_socket_list:
+        for recv_socket in recv_socket_list:
+            message = get_message(recv_socket)
+            if message['action'] == 'leave':
+                recv_socket.close()
+                clients.remove(recv_socket)
+            if message['action'] == 'msg' and send_socket_list:
+                message = create_client_message(message['message'])
+                for send_socket in send_socket_list:
+                    send_message(send_socket, message)
+
+
 def main():
     ip, port = get_server_cli_args()
     server_socket = connect_server_socket(ip, port)
@@ -100,25 +123,7 @@ def main():
                 clients.append(client)
 
         if clients:
-            recv_socket_list = []
-            send_socket_list = []
-            err_list = []
-
-            try:
-                recv_socket_list, send_socket_list, err_list = select.select(clients, clients, [], 0)
-            except OSError:
-                pass
-
-            if recv_socket_list:
-                for recv_socket in recv_socket_list:
-                    message = get_message(recv_socket)
-                    if message['action'] == 'leave':
-                        recv_socket.close()
-                        clients.remove(recv_socket)
-                    if message['action'] == 'msg' and send_socket_list:
-                        message = create_client_message(message['message'])
-                        for send_socket in send_socket_list:
-                            send_message(send_socket, message)
+            handle_clients(clients)
 
 
 if __name__ == '__main__':

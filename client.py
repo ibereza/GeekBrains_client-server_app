@@ -83,6 +83,7 @@ def create_message():
     return message
 
 
+@log
 def create_message_leave():
     message = {
         "action": "leave",
