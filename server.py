@@ -1,6 +1,7 @@
 import argparse
 import logging
 import re
+import select
 from socket import *
 from time import time
 
@@ -47,20 +48,31 @@ def connect_server_socket(ip, port):
     else:
         server_log.info('Socket connected successfully')
     socket_.listen(5)
+    socket_.settimeout(0.2)
     return socket_
 
 
 @log
-def process_client_message(message):
-    server_message = ''
-    if message['action'] == 'presence':
-        server_message = {
-            "response": 200,
-            "time": time(),
-            "alert": 'OK'
-        }
+def process_client_message():
+    server_message = {
+        "response": 200,
+        "time": time(),
+        "alert": 'OK'
+    }
     server_log.info('Server message created')
     return server_message
+
+
+@log
+def create_client_message(message):
+    send_message = {
+        "action": "msg",
+        "time": time(),
+        "to": "#room_name",
+        "from": "account_name",
+        "message": message
+    }
+    return send_message
 
 
 def main():
@@ -69,21 +81,44 @@ def main():
     print(f'Server started on port {port}')
     server_log.info(f'Server started on port {port}')
 
+    clients = []
+
     while True:
-        client, address = server_socket.accept()
-        print(f'Connection request received from {address}')
-        server_log.info(f'Connection request received from {address}')
+        try:
+            client, address = server_socket.accept()
+            print(f'Connection request received from {address}')
+            server_log.info(f'Connection request received from {address}')
+        except OSError:
+            pass
+        else:
+            client_message = get_message(client)
+            server_log.info('Client message received')
+            if client_message['action'] == 'presence':
+                server_message = process_client_message()
+                send_message(client, server_message)
+                server_log.info('Server message sent')
+                clients.append(client)
 
-        client_message = get_message(client)
-        print(f'Message received: {client_message}')
-        server_log.info('Client message received')
+        if clients:
+            recv_socket_list = []
+            send_socket_list = []
+            err_list = []
 
-        server_message = process_client_message(client_message)
-        send_message(client, server_message)
-        server_log.info('Server message sent')
+            try:
+                recv_socket_list, send_socket_list, err_list = select.select(clients, clients, [], 0)
+            except OSError:
+                pass
 
-        client.close()
-        server_log.info(f'Connection with {address} closed')
+            if recv_socket_list:
+                for recv_socket in recv_socket_list:
+                    message = get_message(recv_socket)
+                    if message['action'] == 'leave':
+                        recv_socket.close()
+                        clients.remove(recv_socket)
+                    if message['action'] == 'msg' and send_socket_list:
+                        message = create_client_message(message['message'])
+                        for send_socket in send_socket_list:
+                            send_message(send_socket, message)
 
 
 if __name__ == '__main__':

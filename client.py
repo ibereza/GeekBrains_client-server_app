@@ -18,6 +18,8 @@ def get_client_cli_args():
     args_parser.add_argument("address", type=str, help='Server IP address')
     args_parser.add_argument("port", nargs='?', type=int, default=DEFAULT_PORT,
                              help='Server port (must be in range 1024-65535)')
+    args_parser.add_argument("mode", nargs='?', type=str, default='listen',
+                             help='Working mode "listen" or "send"')
     args = args_parser.parse_args()
     ip_re_tpl = r'^((25[0-5]|2[4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[4]\d|[01]?\d\d?)$'
     args_correct = True
@@ -29,10 +31,14 @@ def get_client_cli_args():
         print('The port address must be in the range 1024-65535')
         args_correct = False
         client_log.error('Wrong port address')
+    if args.mode not in ['listen', 'send']:
+        print('Incorrect argument for working mode (specify "listen" or "send")')
+        args_correct = False
+        client_log.error('Incorrect argument for working mode')
     if not args_correct:
         exit(1)
     client_log.info(f'CLI arguments are correct. IP: {args.address}, Port: {args.port}')
-    return args.address, args.port
+    return args.address, args.port, args.mode
 
 
 @log
@@ -64,8 +70,30 @@ def create_message_presence(account_name='Guest'):
     return message
 
 
+@log
+def create_message():
+    message = input('Input the message (or "exit" to finish work): ')
+    message = {
+        "action": "msg",
+        "time": time(),
+        "to": "#room_name",
+        "from": "account_name",
+        "message": message
+    }
+    return message
+
+
+def create_message_leave():
+    message = {
+        "action": "leave",
+        "time": time(),
+        "room": "#room_name"
+    }
+    return message
+
+
 def main():
-    server_ip_address, server_port = get_client_cli_args()
+    server_ip_address, server_port, working_mode = get_client_cli_args()
     client_socket = connect_client_socket(server_ip_address, server_port)
 
     client_message = create_message_presence()
@@ -77,8 +105,23 @@ def main():
     print(f'Server response code: {server_message["response"]}')
     print(f'Server message: {server_message["alert"]}')
 
-    client_socket.close()
-    client_log.info('Socket closed')
+    if server_message["response"] == 200:
+        while True:
+            if working_mode == 'send':
+                client_message = create_message()
+                if client_message['message'] == 'exit':
+                    print('Program terminated by user command')
+                    client_message = create_message_leave()
+                    send_message(client_socket, client_message)
+                    client_socket.close()
+                    client_log.info('Socket closed')
+                    exit(1)
+                send_message(client_socket, client_message)
+                print('Message sent')
+            else:
+                server_message = get_message(client_socket)
+                if server_message['action'] == 'msg':
+                    print(server_message['message'])
 
 
 if __name__ == '__main__':
