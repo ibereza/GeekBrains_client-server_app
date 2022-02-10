@@ -68,9 +68,9 @@ def create_client_message(message):
     send_message = {
         "action": "msg",
         "time": time(),
-        "to": "#room_name",
-        "from": "account_name",
-        "message": message
+        "to": message['to'],
+        "from": message['from'],
+        "message": message['message']
     }
     return send_message
 
@@ -93,7 +93,7 @@ def handle_clients(clients):
                 recv_socket.close()
                 clients.remove(recv_socket)
             if message['action'] == 'msg' and send_socket_list:
-                message = create_client_message(message['message'])
+                # message = create_client_message(message)
                 for send_socket in send_socket_list:
                     send_message(send_socket, message)
 
