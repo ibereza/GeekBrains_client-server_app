@@ -82,7 +82,7 @@ def handle_clients(clients):
     err_list = []
 
     try:
-        recv_socket_list, send_socket_list, err_list = select.select(clients, clients, [], 0)
+        recv_socket_list, send_socket_list, err_list = select.select(clients.keys(), clients.keys(), [], 0)
     except OSError:
         pass
 
@@ -91,11 +91,13 @@ def handle_clients(clients):
             message = get_message(recv_socket)
             if message['action'] == 'leave':
                 recv_socket.close()
-                clients.remove(recv_socket)
-            if message['action'] == 'msg' and send_socket_list:
-                # message = create_client_message(message)
-                for send_socket in send_socket_list:
-                    send_message(send_socket, message)
+                print(f'User {clients[recv_socket]} disconnected')
+                del clients[recv_socket]
+            if message['action'] == 'msg' and message['to'] in clients.values():
+                # for send_socket in send_socket_list:
+                #     send_message(send_socket, message)
+                send_socket = [socket for socket, user_name in clients.items() if message['to'] == user_name][0]
+                send_message(send_socket, message)
 
 
 def main():
@@ -104,7 +106,7 @@ def main():
     print(f'Server started on port {port}')
     server_log.info(f'Server started on port {port}')
 
-    clients = []
+    clients = {}
 
     while True:
         try:
@@ -120,7 +122,7 @@ def main():
                 server_message = process_client_message()
                 send_message(client, server_message)
                 server_log.info('Server message sent')
-                clients.append(client)
+                clients[client] = client_message['user']['account_name']
 
         if clients:
             handle_clients(clients)

@@ -91,6 +91,7 @@ def create_message_leave():
     return message
 
 
+@log
 def send_to_server(user_name, client_socket):
     while True:
         client_message = create_message(user_name)
@@ -104,10 +105,11 @@ def send_to_server(user_name, client_socket):
         send_message(client_socket, client_message)
 
 
-def receive_from_server(user_name, client_socket):
+@log
+def receive_from_server(client_socket):
     while True:
         server_message = get_message(client_socket)
-        if server_message['action'] == 'msg' and server_message['to'] == user_name:
+        if server_message['action'] == 'msg':
             print(
                 f'\r\033[KMessage from {server_message["from"]}: {server_message["message"]}\n\nEnter the recipient of the message: ',
                 end='')
@@ -117,7 +119,7 @@ def main():
     server_ip_address, server_port, user_name = get_client_cli_args()
     client_socket = connect_client_socket(server_ip_address, server_port)
 
-    client_message = create_message_presence()
+    client_message = create_message_presence(user_name)
     send_message(client_socket, client_message)
     client_log.info('Presence message sent')
 
@@ -129,7 +131,7 @@ def main():
 
     if server_message["response"] == 200:
         send_thread = Thread(target=send_to_server, args=(user_name, client_socket))
-        receive_thread = Thread(target=receive_from_server, args=(user_name, client_socket,))
+        receive_thread = Thread(target=receive_from_server, args=(client_socket,))
         send_thread.daemon = False
         receive_thread.daemon = True
         send_thread.start()
